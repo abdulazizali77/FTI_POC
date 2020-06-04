@@ -1,0 +1,27 @@
+{
+  "name": "FTI POC",
+  "version": "0.1",
+  "description": "FTI POC",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "declarativeContent",
+    "storage",
+    "tabs",
+    "<all_urls>"
+  ],
+
+  "background": {
+    "persistent": true,
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [{
+    "matches": ["*://*/*"],
+    "js": ["contentscript.js"]
+  }],
+  "browser_action": {
+    "default_title": "FTI POC"
+  },
+
+  "manifest_version": 2
+}
