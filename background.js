@@ -200,7 +200,8 @@ function mainBrowserAction(tab, rightClick) {
                     " rightClick.rect.top=" + rightClick.rect.top
                     + " rightClick.rect.left=" + rightClick.rect.left
                     + " rightClick.rect.width=" + rightClick.rect.width
-                    + " rightClick.rect.height=" + rightClick.rect.height;
+                    + " rightClick.rect.height=" + rightClick.rect.height
+                    + " rightClick.rect.offsetTop=" + rightClick.rect.offsetTop;
 
             }
         }
@@ -225,7 +226,8 @@ function addCommentForAd(pointClicked) {
                     extra += "window.hoveredElement.rect.top=" + obj.rect.top
                         + " window.hoveredElement.rect.left=" + obj.rect.left
                         + " window.hoveredElement.rect.width=" + obj.rect.width
-                        + " window.hoveredElement.rect.height=" + obj.rect.height;
+                        + " window.hoveredElement.rect.height=" + obj.rect.height
+                        + " window.hoveredElement.rect.offsetTop=" + obj.rect.offsetTop;
                 }
             }
             //alert("addCommentForAd get_obj.rightClick callback " + extra);

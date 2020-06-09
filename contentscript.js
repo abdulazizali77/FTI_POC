@@ -18,7 +18,14 @@ function drawEditingBox(dataURIObj, targetRect, buttonCallback) {
     //add textarea
     var textareaDiv = document.createElement("DIV");
     textareaDiv.id = "div" + newId;
-    textareaDiv.style.cssText = "position:absolute; left:" + targetRect.left + "px; offsetTop:" + targetRect.top + "px;";
+    //FIXME: buggy bug here
+    //the tragetRect is at a specific body scroll instance
+    //so if the page scrolls after capturing and cropping, the bounding rect will change
+    //but wont be reflected in the targetRect we have hence the positioning of our textarea will be incorrect
+    //this is an issue because were appending to body
+    //using the wrong top
+    alert("targetRect.offSetTop =" + targetRect.offsetTop +" targetRect.left="+targetRect.left +" top="+targetRect.top);
+    textareaDiv.style.cssText = "position: absolute; left:" + targetRect.left + "px; top:" + targetRect.offsetTop + "px; z-index: 100";
     textareaDiv.setAttribute("dataURL", imageData);
     textareaDiv.setAttribute("newId", newId);
 
@@ -138,6 +145,9 @@ function mouseOver(e) {
     var elems = document.querySelectorAll("iframe:hover");
     var extra = "";
     var rect;
+
+    var absoluteY = window.pageYOffset + elems[0].getBoundingClientRect().y;
+    //alert("elems.length =" + elems.length + " absoluteY=" + absoluteY + " window.pageYOffset=" + window.pageYOffset + " " + elems[0].getBoundingClientRect().y);
     if (elems != undefined) {
         extra = "elems.length=" + elems.length + "\n";
         if (elems.length != undefined) {
@@ -156,18 +166,21 @@ function mouseOver(e) {
             top: rect.top,
             left: rect.left,
             width: rect.width,
-            height: rect.height
+            height: rect.height,
+            offsetTop: window.pageYOffset + rect.top //WTF
         }
     };
+
     /*
     alert(arguments.length
-        + " hoveredElement.id=" + hoveredElement.id,
-        +" hoveredElement.name=" + hoveredElement.name,
-        +" hoveredElement.tagName=" + hoveredElement.tagName,
+        + " hoveredElement.id=" + hoveredElement.id
+        +" hoveredElement.name=" + hoveredElement.name
+        +" hoveredElement.tagName=" + hoveredElement.tagName
         +" hoveredElement.rect.top=" + hoveredElement.rect.top
         + " hoveredElement.rect.left=" + hoveredElement.rect.left
+        + " hoveredElement.rect.offsetTop=" + hoveredElement.rect.offsetTop
         + " pageX=" + e.pageX + " pageY=" + e.pageY + " " + extra);
-        */
+    */
 }
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
@@ -175,8 +188,9 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         sendResponse(getElementBoundingBox());
     }
     if (msg.text === 'crop_image') {
-        //alert("chrome.runtime=" + chrome.runtime + " chrome.extension=" + chrome.extension);
+        //alert("msg.cropRectangle.offsetTop="+msg.cropRectangle.offsetTop);
         cropImageDataURI(msg.originalDataURI, msg.cropRectangle).then((returnedDataURI) => {
+            //alert("cropImageDataURI msg.cropRectangle.offsetTop="+msg.cropRectangle.offsetTop);
             //alert("sendResponse=" + sendResponse + " returnedDataURI=" + returnedDataURI);
             //sendResponse(returnedDataURI);
             //get md5 here
@@ -216,7 +230,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
                 extra += "window.hoveredElement.rect.top=" + window.hoveredElement.rect.top
                     + " window.hoveredElement.rect.left=" + window.hoveredElement.rect.left
                     + " window.hoveredElement.rect.width=" + window.hoveredElement.rect.width
-                    + " window.hoveredElement.rect.height=" + window.hoveredElement.rect.height;
+                    + " window.hoveredElement.rect.height=" + window.hoveredElement.rect.height
+                    + " window.hoveredElement.rect.offsetTop=" + window.hoveredElement.rect.offsetTop;
             }
         }
         //alert("get_rightclick window.hoveredElement=" + window.hoveredElement + " \n" + extra);
