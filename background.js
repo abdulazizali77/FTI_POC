@@ -2,11 +2,50 @@ var currentTab;
 var add_menu;
 var find_menu;
 var listenersInstalled = 0;
+var serverConfig = {
+    serverProtocol: "http",
+    serverHost: "192.168.56.1",
+    serverPort: 8080,
+    basePath: "",
+    advertService: "/adverts"
+};
+var sessionUsername = "admin";
+var sessionPassword = "password";
+
+function toggleExtension(){
+    //check for local storage if extension is enabled for current site/url
+    //when button is clicked
+}
+
+function calculateMd5(dataURL) {
+    var dataURLByteString = atob(dataURL.split(',')[1]);
+    var dataURLArrayBuffer = Uint8Array.from(dataURLByteString, ch => ch.charCodeAt(0)).buffer;
+    var dataURLMd5 = md5.update(dataURLArrayBuffer);
+    //FIXME: send byteString or base64?
+    return {md5Index: dataURLMd5.toString(), imageData: dataURLByteString, original: dataURL};
+}
 
 function afterCrop(returnedDataURI) {
-    //alert("afterCrop returnedDataURI=" + returnedDataURI);
-    chrome.tabs.create({url: returnedDataURI}, function (tab) {
-        //alert("tab=" + tab.id);
+    alert("afterCrop returnedDataURI=" + returnedDataURI);
+
+    //calculate md5
+    // sendGetAnnotationRequest(calculateMd5(returnedDataURI)).then((response) => {
+    //     alert("sendGetAnnotationRequest afterCrop response=" + response + "\n" + returnedDataURI);
+    //     chrome.tabs.create({url: returnedDataURI}, function (tab) {
+    //         //alert("tab=" + tab.id);
+    //     });
+    // });
+
+    sendAddAnnotationRequest(returnedDataURI).then((response) => {
+        alert("sendGetAnnotationRequest\nafterCrop "
+            + "returnedDataURI.md5Index=" + returnedDataURI.md5Index
+            //+ "returnedDataURI.original.length=" + returnedDataURI.original.length
+            + "response.md5Index=" + response.md5Index
+            + "response.original.length=" + response.original.length
+            + "\n" + response.original);
+        chrome.tabs.create({url: response.original}, function (tab) {
+            //alert("tab=" + tab.id);
+        });
     });
 }
 
@@ -50,6 +89,99 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 //         });
 //     }
 // });
+
+function sendGenericRequest(method, methodArgs, headersArray) {
+    return new Promise((resolve, reject) => {
+            let xhr = new XMLHttpRequest();
+
+        }
+    );
+}
+
+function handleEvent(e) {
+    //log.textContent = log.textContent + `${e.type}: ${e.loaded} bytes transferred\n`;
+    console.log("handleEvent arguments.length=" + arguments.length + " e=" + e);
+}
+
+function addListeners(xhr) {
+    xhr.addEventListener('loadstart', handleEvent);
+    xhr.addEventListener('load', handleEvent);
+    xhr.addEventListener('loadend', handleEvent);
+    xhr.addEventListener('progress', handleEvent);
+    xhr.addEventListener('error', handleEvent);
+    xhr.addEventListener('abort', handleEvent);
+}
+
+//FIXME: IM SO ASHAMED OF MY CODE I MIGHT AS WELL WALK AROUND WITH NO PANTS
+function sendAddAnnotationRequest(advertObject) {
+    return new Promise((resolve, reject) => {
+            alert("sendAddAnnotationRequest"
+                + " advertObject.md5Index=" + advertObject.md5Index
+                //+ " advertObject.imageData=" + advertObject.imageData
+            );
+            let localadvertObj = {md5Index: advertObject.md5Index, imageData: advertObject.imageData};
+            let xhr = new XMLHttpRequest();
+            var url = serverConfig.serverProtocol + "://" + serverConfig.serverHost + ":" + serverConfig.serverPort
+                + serverConfig.advertService;
+            var result;
+            xhr.onreadystatechange = function () { // Call a function when the state changes.
+                alert("this.readyState=" + xhr.readyState + " xhr.status=" + xhr.status);
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    // Request finished. Do processing here.
+                    resolve({
+                        returnedObj: xhr.response,
+                        original: advertObject.original,
+                        md5Index: localadvertObj.md5Index
+                    });
+                }
+                if (xhr.status === 401) {
+                    // Request finished. Do processing here.
+                    alert("handle 401");
+                    reject(xhr.response);
+                }
+            };
+
+            addListeners(xhr);
+            xhr.open("POST", url, true, sessionUsername, sessionPassword);
+            //add headers
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.setRequestHeader("Authorization", "Basic " + btoa(sessionUsername + ":" + sessionPassword));
+            xhr.withCredentials = true;
+            xhr.send(JSON.stringify(localadvertObj));
+        }
+    );
+}
+
+function sendGetAnnotationRequest(advertObject) {
+    return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            var url = serverConfig.serverProtocol + "://" + serverConfig.serverHost + ":" + serverConfig.serverPort
+                + serverConfig.advertService;
+            //+ "/" + advertObject.indexMd5;
+
+            var result;
+            xhr.onreadystatechange = function () { // Call a function when the state changes.
+                alert("sendGetAnnotationRequest this.readyState=" + xhr.readyState + " xhr.status=" + xhr.status);
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    // Request finished. Do processing here.
+                    resolve(xhr.response);
+                }
+                if (xhr.status === 401) {
+                    // Request finished. Do processing here.
+                    alert("handle 401");
+                    reject(xhr.response);
+                }
+            };
+            addListeners(xhr);
+            xhr.open("GET", url, true, sessionUsername, sessionPassword);
+            //add headers
+            xhr.setRequestHeader("Authorization", "Basic " + btoa(sessionUsername + ":" + sessionPassword));
+            xhr.withCredentials = true;
+            xhr.responseType = "json";
+            xhr.send(JSON.stringify(advertObject));
+        }
+    );
+}
 
 function mainBrowserAction(tab, rightClick) {
     getImgDataUri().then((originalImageDataURI) => {

@@ -13,11 +13,11 @@
 
   "background": {
     "persistent": true,
-    "scripts": ["background.js"]
+    "scripts": ["background.js", "md5.js"]
   },
   "content_scripts": [{
     "matches": ["*://*/*"],
-    "js": ["contentscript.js"]
+    "js": ["contentscript.js", "md5.js"]
   }],
   "browser_action": {
     "default_title": "FTI POC"

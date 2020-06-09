@@ -2,6 +2,62 @@ var rightClick;
 var leftClick;
 var hoveredElement;
 
+function calculateMd5(dataURL) {
+    var dataURLByteString = atob(dataURL.split(',')[1]);
+    var dataURLArrayBuffer = Uint8Array.from(dataURLByteString, ch => ch.charCodeAt(0)).buffer;
+    var dataURLMd5 = md5.update(dataURLArrayBuffer);
+    //FIXME: send byteString or base64?
+    return {md5Index: dataURLMd5.toString(), imageData: dataURLByteString, original: dataURL};
+}
+
+function drawEditingBox(dataURIObj, targetRect, buttonCallback) {
+    //FIXME: should this be in a promise?
+    var newId = dataURIObj.md5Index;
+    var imageData = dataURIObj.imageData;
+    var originalData = dataURIObj.original;
+    //add textarea
+    var textareaDiv = document.createElement("DIV");
+    textareaDiv.id = "div" + newId;
+    textareaDiv.style.cssText = "position:absolute; left:" + targetRect.left + "px; offsetTop:" + targetRect.top + "px;";
+    textareaDiv.setAttribute("dataURL", imageData);
+    textareaDiv.setAttribute("newId", newId);
+
+    var textarea = document.createElement("TEXTAREA");
+    textarea.id = "textarea" + newId;
+    textarea.style.cssText = "width:100px; height: 100px;";
+
+    var textareabutton = document.createElement("BUTTON");
+    textareabutton.id = "textareabutton " + newId;
+    textareabutton.style.cssText = "width:100px; height: 30px;";
+    textareabutton.innerText = "Add";
+    textareabutton.onclick = function (e) {
+        let localtextareavalue = "empty";
+        let localtextarea = document.getElementById(textareabutton.getAttribute("textbind"));
+        let localdiv = textareabutton.parentElement;
+        let localimageData = localdiv.getAttribute("dataURL");
+        let localnewId = localdiv.getAttribute("newId");
+        if (localtextarea != undefined) {
+            localtextareavalue = localtextarea.value;
+        }
+        alert("LOOKITME!\ntextarea.value=" + textarea.value
+            + " localtextarea=" + localtextarea + " localtextareavalue=" + localtextareavalue
+            + " newId=" + newId + "localnewId=" + localnewId
+            //+ "\nlocalimageData=" + localimageData
+            //+ "\nimageData=" + imageData
+        );
+        buttonCallback({
+            annotationContent: localtextareavalue,
+            md5Index: newId,
+            imageData: imageData,
+            original: originalData
+        });
+    };
+
+    textareaDiv.appendChild(textarea);
+    textareaDiv.appendChild(textareabutton);
+    document.body.append(textareaDiv);
+}
+
 function getElementBoundingBox(key) {
     //should this be in a Promise?
     var elems = document.getElementsByTagName("IFRAME");
@@ -122,8 +178,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         //alert("chrome.runtime=" + chrome.runtime + " chrome.extension=" + chrome.extension);
         cropImageDataURI(msg.originalDataURI, msg.cropRectangle).then((returnedDataURI) => {
             //alert("sendResponse=" + sendResponse + " returnedDataURI=" + returnedDataURI);
-            sendResponse(returnedDataURI);
+            //sendResponse(returnedDataURI);
+            //get md5 here
+            var returnedDataURIMD5 = calculateMd5(returnedDataURI);
+            drawEditingBox(returnedDataURIMD5, msg.cropRectangle, sendResponse);
         });
+
     }
     if (msg.text === 'install_listeners') {
         //alert("install_listeners " + document + " " + document.body);
@@ -162,5 +222,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         //alert("get_rightclick window.hoveredElement=" + window.hoveredElement + " \n" + extra);
         sendResponse(window.hoveredElement);//WTF
     }
+    // if(msg.text === 'show_editing_box'){
+    //
+    // }
     return true;
 });
