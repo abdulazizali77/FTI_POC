@@ -24,7 +24,7 @@ function drawEditingBox(dataURIObj, targetRect, buttonCallback) {
     //but wont be reflected in the targetRect we have hence the positioning of our textarea will be incorrect
     //this is an issue because were appending to body
     //using the wrong top
-    alert("targetRect.offSetTop =" + targetRect.offsetTop +" targetRect.left="+targetRect.left +" top="+targetRect.top);
+    //alert("targetRect.offSetTop =" + targetRect.offsetTop +" targetRect.left="+targetRect.left +" top="+targetRect.top);
     textareaDiv.style.cssText = "position: absolute; left:" + targetRect.left + "px; top:" + targetRect.offsetTop + "px; z-index: 100";
     textareaDiv.setAttribute("dataURL", imageData);
     textareaDiv.setAttribute("newId", newId);
@@ -39,6 +39,7 @@ function drawEditingBox(dataURIObj, targetRect, buttonCallback) {
     textareabutton.innerText = "Add";
     textareabutton.onclick = function (e) {
         let localtextareavalue = "empty";
+        //FIXME:
         let localtextarea = document.getElementById(textareabutton.getAttribute("textbind"));
         let localdiv = textareabutton.parentElement;
         let localimageData = localdiv.getAttribute("dataURL");
@@ -47,13 +48,15 @@ function drawEditingBox(dataURIObj, targetRect, buttonCallback) {
             localtextareavalue = localtextarea.value;
         }
         alert("LOOKITME!\ntextarea.value=" + textarea.value
+            + "textareabutton.getAttribute(\"textbind\")="+textareabutton.getAttribute("textbind")
             + " localtextarea=" + localtextarea + " localtextareavalue=" + localtextareavalue
             + " newId=" + newId + "localnewId=" + localnewId
+            + " originalData="+originalData
             //+ "\nlocalimageData=" + localimageData
             //+ "\nimageData=" + imageData
         );
         buttonCallback({
-            annotationContent: localtextareavalue,
+            annotationContent: textarea.value,
             md5Index: newId,
             imageData: imageData,
             original: originalData

@@ -12,7 +12,7 @@ var serverConfig = {
 var sessionUsername = "admin";
 var sessionPassword = "password";
 
-function toggleExtension(){
+function toggleExtension() {
     //check for local storage if extension is enabled for current site/url
     //when button is clicked
 }
@@ -26,7 +26,7 @@ function calculateMd5(dataURL) {
 }
 
 function afterCrop(returnedDataURI) {
-    alert("afterCrop returnedDataURI=" + returnedDataURI);
+    //alert("afterCrop returnedDataURI=" + returnedDataURI);
 
     //calculate md5
     // sendGetAnnotationRequest(calculateMd5(returnedDataURI)).then((response) => {
@@ -115,11 +115,20 @@ function addListeners(xhr) {
 //FIXME: IM SO ASHAMED OF MY CODE I MIGHT AS WELL WALK AROUND WITH NO PANTS
 function sendAddAnnotationRequest(advertObject) {
     return new Promise((resolve, reject) => {
+
+            //let localadvertObj = {md5Index: advertObject.md5Index, imageData: advertObject.imageData};
+            let localadvertObj = {
+                md5Index: advertObject.md5Index,
+                imageData: advertObject.original.split(',')[1],
+                annotations: [{annotationContent: advertObject.annotationContent, entryAdded: Date.now()}]
+            };
             alert("sendAddAnnotationRequest"
                 + " advertObject.md5Index=" + advertObject.md5Index
+                + " advertObject.annotationContent" + advertObject.annotationContent
+                + " localadvertObj.annotations[0]=" + localadvertObj.annotations[0]
+                //+ "\n" +advertObject.original.split(',')[1]
                 //+ " advertObject.imageData=" + advertObject.imageData
             );
-            let localadvertObj = {md5Index: advertObject.md5Index, imageData: advertObject.imageData};
             let xhr = new XMLHttpRequest();
             var url = serverConfig.serverProtocol + "://" + serverConfig.serverHost + ":" + serverConfig.serverPort
                 + serverConfig.advertService;
@@ -206,7 +215,11 @@ function mainBrowserAction(tab, rightClick) {
             }
         }
         //alert("mainBrowserAction rightClick=" + rightClick + " " + extra);
-        var rect = rightClick.rect;
+        var rect;
+        if (rightClick != undefined) {
+            rect = rightClick.rect;
+        }
+
         chrome.tabs.sendMessage(tab.id,
             {text: 'crop_image', originalDataURI: originalImageDataURI, cropRectangle: rect},
             afterCrop)
